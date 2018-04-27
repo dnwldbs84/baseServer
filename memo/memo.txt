@@ -1,0 +1,13 @@
+session 관련
+  1. session 옵션 설정
+  2. session memory store 설정
+
+passport 관련
+  1. 중복 접속 게임 시 처리? (중복 접속 막기?)
+  // 2. 로그인 실패 이유 알림? flash
+  // 3. 구글 계정 로그아웃??
+  4. connect ensure 사용(profile 확인 시?)
+  5. serialize deserialize ?? 체크
+
+다른 middleware 관련
+  1. body-parser 옵션 설정
