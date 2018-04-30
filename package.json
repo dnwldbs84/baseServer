@@ -20,7 +20,6 @@
     "passport-google-oauth20": "^1.0.0",
     "passport-local": "^1.0.0",
     "redis": "^2.8.0",
-    "sticky-cluster": "^0.3.5",
     "ws": "^5.1.1"
   }
 }

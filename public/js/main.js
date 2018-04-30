@@ -16,6 +16,8 @@ if(user){
     // });
   // clientModule.WebSocket.close(1000);
 }
+
+
 function setupSocket() {
   socket.open('ws://localhost:3000');
   socket.onmessage = function(msg) {
