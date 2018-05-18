@@ -1,4 +1,7 @@
 exports.getMain = function(req, res) {
+  console.log('in get main');
+  console.log(req.session);
+
   res.render('index', { user: req.user });
   if(req.user) {
     console.log(req.user);

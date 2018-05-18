@@ -12,14 +12,19 @@
   "dependencies": {
     "body-parser": "^1.18.2",
     "connect-ensure-login": "^0.1.1",
+    "connect-flash": "^0.1.1",
+    "connect-redis": "^3.3.3",
     "cookie-parser": "^1.4.3",
     "ejs": "^2.5.9",
     "express": "^4.16.3",
     "express-session": "^1.15.6",
+    "mysql": "^2.15.0",
     "passport": "^0.4.0",
     "passport-google-oauth20": "^1.0.0",
     "passport-local": "^1.0.0",
     "redis": "^2.8.0",
+    "sticky-session": "^1.1.2",
+    "text-encoding": "^0.6.4",
     "ws": "^5.1.1"
   }
 }

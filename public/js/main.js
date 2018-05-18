@@ -1,59 +1,41 @@
 var clientModule = require('../../modules/client');
-// var publicUtil = require('../../modules/public.js');
+var publicModule = require('../../modules/public');
 
 var socket = new clientModule.WebSocket();
 
+clientModule.UI.uiEventHandler.initMainSceneEventHandler(
+    clientModule.UI.mainScene, clientModule.Ajax, setupSocket, sendStringMessage, sendIntegerMessage, sendSelfMessage);
+
 if(user){
   setupSocket();
-  clientModule.UI.mainScene.showHelloPannel(viewProfileCallback, logoutCallback, sendPacket);
-    // function(chatMsg) {
-    //   socket.send(chatMsg);
-    // });
+  clientModule.UI.mainScene.showHelloPannel();
 }else{
-  clientModule.UI.mainScene.showLoginPannel(playAsGuestCallback, setupSocket);
-    // function() {
-    //   setupSocket();
-    // });
-  // clientModule.WebSocket.close(1000);
+  clientModule.UI.mainScene.showLoginPannel();
 }
 
+window.onbeforeunload = function(e) {
+  socket.close(1000);
+}
 
 function setupSocket() {
   socket.open('ws://localhost:3000');
-  socket.onmessage = function(msg) {
-    clientModule.UI.mainScene.onChatMessage(msg);
-    // console.log(msg);
+  socket.onmessage = function(packet) {
+    var msg = publicModule.encoder.decodePacket(packet.data);
+    clientModule.UI.mainScene.displayChatMessage(msg);
   }
 }
-function sendPacket(packet) {
+
+function sendStringMessage(msg) {
+  var packet = publicModule.encoder.encodePacketWithType(publicModule.config.MESSAGE_DATA_TYPE.STRING, publicModule.config.MESSAGE_TYPE.CHAT_TO_ALL, msg);
   socket.send(packet);
 }
-function viewProfileCallback() {
-  clientModule.Ajax.tryAjax('/profile', null,
-    function(req) {
-      var res = JSON.parse(req.response);
-      if(res.user) {
-        console.log(res.user);
-      }
-    });
+
+function sendIntegerMessage(msg) {
+  var packet = publicModule.encoder.encodePacketWithType(publicModule.config.MESSAGE_DATA_TYPE.INTEGER, publicModule.config.MESSAGE_TYPE.CHAT_TO_ALL, msg);
+  socket.send(packet);
 }
-function logoutCallback() {
-  clientModule.Ajax.tryAjax('/logout', null,
-    function() {
-      console.log('reload');
-      window.location.href = '/';
-    });
-}
-function playAsGuestCallback() {
-  clientModule.Ajax.tryAjax('/play-as-guest', 'username=Guest&password=none',
-    function(req) {
-      var res = JSON.parse(req.response);
-      if(res.user) {
-        user = res.user;
-        clientModule.UI.mainScene.showHelloPannel(viewProfileCallback, logoutCallback, sendPacket);
-          // function(chatMsg) {
-          //   socket.send(chatMsg);
-          // });
-      }
-    });
+
+function sendSelfMessage(msg) {
+  var packet = publicModule.encoder.encodePacketWithType(publicModule.config.MESSAGE_DATA_TYPE.STRING, publicModule.config.MESSAGE_TYPE.CHAT_TO_SELF, msg);
+  socket.send(packet);
 }

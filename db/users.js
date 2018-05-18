@@ -22,8 +22,8 @@ exports.findOrCreate = function(profile, cb) {
   });
 }
 exports.createGuest = function(name, pwd, cb) {
-  console.log('createGuest');
   process.nextTick(function() {
+    console.log('createGuest');
     var id = Math.floor(Math.random() * 10000 + 10);
     var record = {
       id: id, username: name, password: pwd, displayName: 'Guest', emails: [ { value: 'Guest@example.com' } ]

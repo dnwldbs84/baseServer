@@ -3,13 +3,38 @@ var WebSocket = require('ws'),
 
 var redisUrl = process.env.REDISTOGO_URL || 'redis://127.0.0.1:6379'; //,
 
-var pub = redis.createClient(), sub = redis.createClient(), clients = [];
+// var process = this.process;
+
+var publicModule = require('../public');
+
+var pub = redis.createClient(redisUrl), sub = redis.createClient(redisUrl), clients = [];
 
 sub.subscribe('global');
-sub.on('message', function(channel, msg) {
-  for(var i=0; i<clients.length; i++) {
-    clients[i].send(msg);
+// sub.subscribe(process.pid);
+
+sub.on('message', function(channel, strData) {
+  var data = JSON.parse(strData);
+  // console.log(data.data);
+  // console.log(data.data.type); // buffer to be an object {type : 'buffer', data : [array]};
+  // console.log(data.data.data);
+  switch (data.type) {
+    case publicModule.config.MESSAGE_TYPE.CHAT_TO_ALL:
+      var buffer = publicModule.encoder.encodePacket(data.dataType, data.data);
+      if (buffer) {
+        for (var i=0; i<clients.length; i++) {
+          clients[i].send(buffer);
+        }
+      }
+      break;
+    case publicModule.config.MESSAGE_TYPE.CHAT_TO_ROOM:
+      break;
   }
+  // var buffer = publicModule.encoder.encodePacket(stringData);
+  // if (buffer) {
+  //   for (var i=0; i<clients.length; i++) {
+  //     clients[i].send(buffer);
+  //   }
+  // }
 });
 
 exports.initWorker = function(server) {
@@ -17,7 +42,6 @@ exports.initWorker = function(server) {
 }
 
 function initSocket(server) {
-  var process = this.process;
   var wss = new WebSocket.Server({ server: server, perMessageDeflate: false });
   process.on('message', function(msg) {
     // console.log('Worker onmessage ' + msg);
@@ -30,9 +54,17 @@ function initSocket(server) {
     client.isAlive = true;
     client.on('pong', heartbeat);
 
-    client.on('message', function(data){
-      pub.publish('global', data);
-      process.send(data);
+    client.on('message', function(packet){
+      var data = publicModule.encoder.decodePacket(packet, true);
+      // deal private message
+      switch (data.type) {
+        case publicModule.config.MESSAGE_TYPE.CHAT_TO_SELF:
+          break;
+        default:
+          pub.publish('global', JSON.stringify(data));
+      }
+      // pub.publish('global', data);
+      // process.send(data); to master process
     });
     client.on('error', function(err) {
       client.close();

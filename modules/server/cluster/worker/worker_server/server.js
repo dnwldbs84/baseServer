@@ -2,38 +2,21 @@ var http = require('http'),
     express = require('express'),
     app = express();
     passport = require('passport'),
-    serverModule = require('../server'),
-    db = require('../../db');
+    flash = require('connect-flash'),
+    serverModule = require('./module'),
+    db = require('./db');
 
-var session = require('express-session');
-    RedisStore = require('connect-redis')(session);
+var session = require('express-session'),
+    RedisStore = require('connect-redis')(session),
     redisUrl = process.env.REDISTOGO_URL || 'redis://127.0.0.1:6379';
-    redisClient = require('redis').createClient(redisUrl);
 
 exports.createServer = function() {
-  // connectDB();
   initServerSetting();
   initRouter();
+  db.user.connectDB();
   var server = http.createServer(app);
   // return app;
   return server;
-}
-
-function connectDB() {
-  var mysql = require('mysql');
-  var connection = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: '0000',
-    database: 'world'
-  });
-  connection.connect();
-  // connection.query('SELECT * FROM user', function(err, result, field) {
-  //   if (err) throw err;
-  //   console.log(result);
-  //   console.log(field);
-  // });
-  // return connection
 }
 
 function initServerSetting() {
@@ -52,6 +35,12 @@ function initServerSetting() {
   app.use(require('body-parser').urlencoded({ extended: false }));
   // app.use(require('express-session')({ secret: '!!@@Secret Cat@@!!', resave: false, saveUninitialized: false }));
 
+  var redisClient = require('redis').createClient(redisUrl);
+
+  redisClient.on('error', function(err) {
+    console.log(err);
+  });
+
   app.use(session({
     store: new RedisStore({ client: redisClient, db: 15, ttl: 24 * 60 * 60 }),
     secret: '!!@@Secret Cat@@!!',
@@ -59,20 +48,6 @@ function initServerSetting() {
     saveUninitialized: true
   }));
 
-  // app.use(session({
-  //   store: new RedisStore(options),
-  //   secret: '!!@@Secret Cat@@!!',
-  //   resave: false,
-  //   saveUninitialized: true,
-  //   cookie: {
-  //     secure: true
-  //   }
-  //   // ,
-  //   // rolling: true
-  // }));
-  redisClient.on('error', function(err) {
-    console.log(err);
-  });
   app.use(function(req, res, next) {
     if(!req.session) {
       return next(new Error('cant find session'));
@@ -80,18 +55,34 @@ function initServerSetting() {
     next();
   });
 
+  app.use(flash());
+
   app.use(express.static('./public'));
     //path.join(__dirname, 'public')));
 
   app.use(passport.initialize());
   app.use(passport.session());
+
+  //error handle
+  app.use(function(error, req, res, next) {
+    console.log(error.stack);
+    res.status(500).send('Something broke!');
+    // res.json({ message: error.message });
+  });
 }
 
 function initRouter() {
   app.get('/', serverModule.router.getMain);
 
+  // for test
+  app.get('/flash', function(req, res) {
+    req.flash('info', 'Flash is back!')
+    // res.end();
+    res.redirect('/');
+  });
+
   app.post('/play-as-guest',
-    passport.authenticate('local', { failureRedirect: '/' }),
+    passport.authenticate('local', { failureRedirect: '/failToLogin' }),
     serverModule.router.postPlayAsGuest);
 
   app.post('/logout', serverModule.router.postLogout);
@@ -100,10 +91,24 @@ function initRouter() {
     require('connect-ensure-login').ensureLoggedIn(),
     serverModule.router.postProfile);
 
+  app.post('/leave-game',
+    require('connect-ensure-login').ensureLoggedIn(),
+    // passport.authenticate('local', { failureRedirect: '/failToLogin' }),
+    serverModule.router.postLeaveGame);
+
+  app.get('/failToLogin', serverModule.router.getFailToLogin);
+
+  // passport route
   app.get('/auth/google',
     passport.authenticate('google', { scope: ['profile'] }));
 
   app.get('/auth/google/callback',
-    passport.authenticate('google', { failureRedirect: '/' }),
+    passport.authenticate('google', { failureRedirect: '/failToLogin' }),
     serverModule.router.getAuthSuccess);
+
+
+  // router event handle
+  serverModule.router.onUserLeaveGame = function(user) {
+    db.user.deleteUser(user);
+  }
 }

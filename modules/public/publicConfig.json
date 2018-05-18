@@ -1,0 +1,11 @@
+{
+  "MESSAGE_DATA_TYPE" : {
+    "STRING" : 1,
+    "INTEGER" : 2
+  },
+  "MESSAGE_TYPE" : {
+    "CHAT_TO_ALL" : 1,
+    "CHAT_TO_ROOM" : 2,
+    "CHAT_TO_SELF" : 3
+  }
+}
