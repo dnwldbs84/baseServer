@@ -25,6 +25,6 @@
     "redis": "^2.8.0",
     "sticky-session": "^1.1.2",
     "text-encoding": "^0.6.4",
-    "ws": "^5.1.1"
+    "ws": "^7.4.6"
   }
 }
